@@ -1,34 +1,31 @@
-#!/usr/bin/env bash
-# Set the number of your first/main monitor, find it under `hyrpctl monitors` then find your monitor and it is the ID: value at the top.
-first=1 
-# Set the number of your secondary monitor
-second=0
-# Set the number of your third monitor
-# third=2
+#!/bin/sh
+# ws-switch.sh
+# Forked on December 19, 2024 from https://github.com/jasper-clarke/hypr-ws-switcher
 
 # Set the number of workspaces per screen
-ws_per_monitor=3
+ws_per_monitor=10
 
+monitor=$(hyprctl activeworkspace | sed -n 's/.*monitorID:\s\([0-9]\+\).*/\1/p')
 
-monitor=$(hyprctl activeworkspace | grep -E "monitorID: " | sed -e 's/^[ \t]*//')
-if [[ $monitor == *"$first"* ]]; then
-    if [[ $2 == "move" ]]; then
-        hyprctl dispatch movetoworkspace $1
-    else
-        hyprctl dispatch workspace $1
-    fi
-elif [[ $monitor == *"$second"* ]]; then
-    calc=$(($1 + $ws_per_monitor))
-    if [[ $2 == "move" ]]; then
-        hyprctl dispatch movetoworkspace $calc
-    else
-        hyprctl dispatch workspace $calc
-    fi
-# elif [[ $monitor == *"$third"* ]]; then
-#     calc=$(($1 + ($ws_per_monitor * 2)))
-#     if [[ $2 == "move" ]]; then
-#         hyprctl dispatch movetoworkspace $calc
-#     else
-#         hyprctl dispatch workspace $calc
-#     fi
-fi
+calc=$(($1 + (ws_per_monitor * monitor)))
+
+case $2/$3 in
+move/)
+	hyprctl dispatch movetoworkspace "$calc"
+	;;
+move/other)
+
+	if [ -n "$4" ]; then
+		calc="$4"
+	else
+		read -r calc <<EOF
+  $(echo "$1 + $ws_per_monitor * ( ($monitor+1)%$(hyprctl monitors | grep -c '^Monitor') )" | bc)
+EOF
+	fi
+
+	hyprctl dispatch movetoworkspace "$calc"
+	;;
+*)
+	hyprctl dispatch workspace "$calc"
+	;;
+esac
