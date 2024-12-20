@@ -6,6 +6,7 @@
 ws_per_monitor=10
 
 monitor=$(hyprctl activeworkspace | sed -n 's/.*monitorID:\s\([0-9]\+\).*/\1/p')
+exclude='\(\sDP\)'
 
 calc=$(($1 + (ws_per_monitor * monitor)))
 
@@ -19,7 +20,7 @@ move/other)
 		calc="$4"
 	else
 		read -r calc <<EOF
-  $(echo "$1 + $ws_per_monitor * ( ($monitor+1)%$(hyprctl monitors | grep -c '^Monitor') )" | bc)
+  $(echo "$1 + $ws_per_monitor * ( ($monitor+1)%$(hyprctl monitors | grep -v "${exclude:-'^$'}" | grep -c '^Monitor') )" | bc)
 EOF
 	fi
 
